@@ -3,6 +3,7 @@ from inference_sdk import InferenceHTTPClient
 from paddleocr import PaddleOCR
 from backend import process, pil_to_cv2
 from PIL import Image
+import time
 
 st.set_page_config(page_title="Sistem Pembaca Perhitungan Suara Pemilu Otomatis", page_icon="📝", layout="centered")
 
