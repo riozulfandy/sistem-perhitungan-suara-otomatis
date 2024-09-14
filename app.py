@@ -1,9 +1,10 @@
 import streamlit as st
 from inference_sdk import InferenceHTTPClient
 from paddleocr import PaddleOCR
-from backend import process, pil_to_cv2
 from PIL import Image
 import time
+import cv2
+import numpy as np
 
 st.set_page_config(page_title="Sistem Pembaca Perhitungan Suara Pemilu Otomatis", page_icon="📝", layout="centered")
 
@@ -23,6 +24,72 @@ CLIENT = load_detection_model()
 ocr = load_ocr_model()
 
 # ====================================USER INTERFACE=====================================
+
+# ====================================FUNCTION=====================================
+
+def crop_image(img, bounding_boxes):
+    # Bird view cropping
+    xmin, ymin, xmax, ymax = bounding_boxes
+    points = [(xmin, ymax), (xmin, ymin), (xmax, ymin), (xmax, ymax)]
+    pts1 = np.float32([[points[0][0], points[0][1]], [points[1][0], points[1][1]],
+                          [points[2][0], points[2][1]], [points[3][0], points[3][1]]])
+    
+    width = 200
+    height = 400
+
+    pts2 = np.float32([[0, height], [0, 0], [width, 0], [width, height]])
+
+    matrix = cv2.getPerspectiveTransform(pts1, pts2)
+    img_output = cv2.warpPerspective(img, matrix, (width, height))
+
+    return img_output
+
+def get_bounding_boxes(img, CLIENT):
+    gray_image = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    result = CLIENT.infer(gray_image, model_id="pemilu-gemastik/1")
+    
+    bounding_boxes = result['predictions']
+    inference_time = result['time']
+
+    dict_bounding_boxes = {}
+    for bounding_boxes in bounding_boxes:
+        x1 = bounding_boxes['x'] - bounding_boxes['width'] / 2
+        x2 = bounding_boxes['x'] + bounding_boxes['width'] / 2
+        y1 = bounding_boxes['y'] - bounding_boxes['height'] / 2
+        y2 = bounding_boxes['y'] + bounding_boxes['height'] / 2
+        class_name = bounding_boxes['class']
+        box = (x1, y1, x2, y2)
+        dict_bounding_boxes[class_name] = box
+    return dict_bounding_boxes, inference_time
+
+def get_texts(ocr_model, img):
+    start = time.time()
+    result = ocr_model.ocr(img, cls=False,det=False)
+    end = time.time()
+
+    return result[0][0][0], result[0][0][1], end-start
+
+def process(img, CLIENT, ocr):
+    # Get the bounding boxes
+    bounding_boxes, inference_time = get_bounding_boxes(img, CLIENT)
+
+    # Predict the texts
+    result_dict = {}
+    for no_urut in range(1,4):
+        bounding_box = bounding_boxes[f"{no_urut}"]
+        cropped_image = crop_image(img, bounding_box)
+        text, confidence, ocr_time = get_texts(ocr, cropped_image)
+        result_dict[no_urut] = {"text": text, "confidence": confidence, "ocr_time": ocr_time}
+
+    result_dict['detect_time'] = inference_time
+
+    return result_dict
+
+def pil_to_cv2(pil_image):
+    open_cv_image = np.array(pil_image)
+    # Konversi dari RGB (PIL) ke BGR (OpenCV)
+    open_cv_image = open_cv_image[:, :, ::-1].copy()
+    return open_cv_image
 
 st.title("Sistem Perhitungan Suara Pemilu Otomatis")
 st.markdown("Website ini merupakan sistem perhitungan suara pemilu otomatis menggunakan teknologi OCR dan Object Detection.")
@@ -63,5 +130,3 @@ if img is not None and process_btn:
     st.write("### Gambar Suara Pemilu")
     st.write(f"### Waktu Proses Sistem: {end_time - start_time:.2f} detik")
     st.image(img, channels="BGR")
-
-
