@@ -52,11 +52,15 @@ elif example_image:
 
 if img is not None and process_btn:
     img = pil_to_cv2(img)
+    start_time = time.time()
     result = process(img, CLIENT, ocr)
+    end_time = time.time()
+
 
     st.markdown("### Hasil Perhitungan Suara")
     st.write(result)
     st.write("### Gambar Suara Pemilu")
+    st.write(f"### Waktu Proses Sistem: {end_time - start_time:.2f} detik")
     st.image(img, channels="BGR")
 
 
