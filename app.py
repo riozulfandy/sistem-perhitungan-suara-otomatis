@@ -46,7 +46,10 @@ def crop_image(img, bounding_boxes):
 
 def get_bounding_boxes(img, CLIENT):
     gray_image = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    start = time.time()
     result = CLIENT.infer(gray_image, model_id="pemilu-gemastik/1")
+    end = time.time()
+    api_latency = (end-start) - result['time']
     
     bounding_boxes = result['predictions']
     inference_time = result['time']
@@ -60,7 +63,7 @@ def get_bounding_boxes(img, CLIENT):
         class_name = bounding_boxes['class']
         box = (x1, y1, x2, y2)
         dict_bounding_boxes[class_name] = box
-    return dict_bounding_boxes, inference_time
+    return dict_bounding_boxes, inference_time, api_latency
 
 def get_texts(ocr_model, img):
     start = time.time()
@@ -71,7 +74,7 @@ def get_texts(ocr_model, img):
 
 def process(img, CLIENT, ocr):
     # Get the bounding boxes
-    bounding_boxes, inference_time = get_bounding_boxes(img, CLIENT)
+    bounding_boxes, inference_time, api_latency = get_bounding_boxes(img, CLIENT)
 
     # Predict the texts
     result_dict = {}
@@ -82,6 +85,7 @@ def process(img, CLIENT, ocr):
         result_dict[no_urut] = {"text": text, "confidence": confidence, "ocr_time": ocr_time}
 
     result_dict['detect_time'] = inference_time
+    result_dict['yolo_api_latency'] = api_latency
 
     return result_dict
 
@@ -123,10 +127,11 @@ if img is not None and process_btn:
     start_time = time.time()
     result = process(img, CLIENT, ocr)
     end_time = time.time()
-
+    total_time = end_time - start_time
+    system_time = total_time - result['yolo_api_latency']
 
     st.markdown("### Hasil Perhitungan Suara")
     st.write(result)
     st.write("### Gambar Suara Pemilu")
-    st.write(f"### Waktu Proses Sistem: {end_time - start_time:.2f} detik")
+    st.write(f"### Waktu Proses Sistem: {system_time} detik")
     st.image(img, channels="BGR")
