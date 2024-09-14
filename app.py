@@ -23,7 +23,6 @@ def load_ocr_model():
 CLIENT = load_detection_model()
 ocr = load_ocr_model()
 
-# ====================================USER INTERFACE=====================================
 
 # ====================================FUNCTION=====================================
 
@@ -101,14 +100,21 @@ st.info("Upload gambar suara pemilu untuk memulai perhitungan suara otomatis.")
 
 
 example_images = {
-    "Gambar 1": "example_images/TPS_0120.jpg",
-    "Gambar 2": "example_images/TPS_0188.jpg",
-    "Gambar 3": "example_images/TPS_1011.jpg",
-    "Gambar 4": "example_images/TPS_0001.jpg",
-    "Gambar 5": "example_images/TPS_0123.jpg",
-    "Gambar 6": "example_images/TPS_0175.jpg",
-    "Gambar 7": "example_images/TPS_0699.jpg",
+    "Gambar 1": "example_images/TPS_0332.jpg",
+    "Gambar 2": "example_images/TPS_0443.jpg",
+    "Gambar 3": "example_images/TPS_0523.jpg",
+    "Gambar 4": "example_images/TPS_0631.jpg",
+    "Gambar 5": "example_images/TPS_0664.jpg",
+    "Gambar 6": "example_images/TPS_0713.jpg",
+    "Gambar 7": "example_images/TPS_0864.jpg",
+    "Gambar 8": "example_images/TPS_1000.jpg",
+    "Gambar 9": "example_images/TPS_1105.jpg",
+    "Gambar 10": "example_images/TPS_1111.jpg",
+    "Gambar 11": "example_images/TPS_1181.jpg",
+    "Gambar 12": "example_images/TPS_1186.jpg",
 }
+
+# ====================================USER INTERFACE=====================================
 
 example_image = st.selectbox("Pilih gambar contoh", list(example_images.keys()))
 uploaded_image = st.file_uploader("Atau upload gambar suara pemilu", type=['jpg','jpeg','png'])
