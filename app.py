@@ -1,7 +1,7 @@
 import streamlit as st
 from inference_sdk import InferenceHTTPClient
 from paddleocr import PaddleOCR
-from PIL import Image
+from PIL import Image, ExifTags
 import time
 import cv2
 import numpy as np
@@ -25,6 +25,25 @@ ocr = load_ocr_model()
 
 
 # ====================================FUNCTION=====================================
+
+def correct_image_orientation(image):
+    try:
+        for orientation in ExifTags.TAGS.keys():
+            if ExifTags.TAGS[orientation] == 'Orientation':
+                break
+
+        exif = image._getexif()
+
+        if exif[orientation] == 3:
+            image = image.rotate(180, expand=True)
+        elif exif[orientation] == 6:
+            image = image.rotate(270, expand=True)
+        elif exif[orientation] == 8:
+            image = image.rotate(90, expand=True)
+    except (AttributeError, KeyError, IndexError):
+        # cases: image don't have getexif
+        pass
+    return image
 
 def crop_image(img, bounding_boxes):
     # Bird view cropping
@@ -110,7 +129,7 @@ example_images = {
     "Gambar 8": "example_images/TPS_1000.jpg",
     "Gambar 9": "example_images/TPS_1105.jpg",
     "Gambar 10": "example_images/TPS_1111.jpg",
-    "Gambar 11": "example_images/TPS_1181.jpg",
+    "Gambar 11": "example_images/TPS_0060.jpg",
     "Gambar 12": "example_images/TPS_1186.jpg",
 }
 
@@ -124,8 +143,10 @@ process_btn = st.button("Proses Gambar")
 img = None
 if uploaded_image is not None:
     img = Image.open(uploaded_image)
+    img = correct_image_orientation(img)
 elif example_image:
     img = Image.open(example_images[example_image])
+    img = correct_image_orientation(img)
 
 
 if img is not None and process_btn:
