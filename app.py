@@ -158,6 +158,8 @@ if img is not None and process_btn:
     total_time = end_time - start_time
     system_time = total_time - result['yolo_api_latency']
 
+    del result['yolo_api_latency']
+
     st.markdown("### Hasil Perhitungan Suara")
     st.write(result)
     st.write("### Gambar Suara Pemilu")
